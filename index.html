@@ -179,6 +179,24 @@ footer .sig b{color:var(--amber)}
   .reveal{opacity:1;transform:none}
   .ceil-line{transform:scaleX(1)}
 }
+
+/* ---- diagnostics ---- */
+.twochart{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.twochart{grid-template-columns:1fr}}
+.cap{font-size:12px;color:var(--slate);letter-spacing:.04em}
+.legend.center{justify-content:center}
+.bar-key{display:inline-block;width:13px;border-top:2px dashed var(--court)}
+.roc-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap;justify-content:center}
+.roc-legend{display:flex;flex-direction:column;gap:12px}
+.roc-row{display:flex;align-items:center;gap:10px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.roc-row .rl-n{min-width:84px}
+.roc-row .rl-a{color:var(--slate)}
+.scatgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:760px){.scatgrid{grid-template-columns:1fr}}
+.seasonbox.sc{padding:18px 16px 12px}
+.sc-h{font-family:"Archivo";font-weight:900;font-size:15px;margin-bottom:6px}
+.sc-h.test{color:var(--amber)}
+.scat-note{font-size:14px;color:#3a424c;margin-top:18px;max-width:680px}
 </style>
 </head>
 <body>
@@ -189,7 +207,7 @@ footer .sig b{color:var(--amber)}
     <a href="#why">Why 63%</a>
     <a href="#model">Model</a>
     <a href="#results">Results</a>
-    <a href="#proj">2025-26</a>
+    <a href="#proj">Diagnostics</a>
     <a href="#files">Files</a>
   </nav>
 </div></div>
@@ -319,25 +337,44 @@ footer .sig b{color:var(--amber)}
 
 <section class="block" id="proj"><div class="wrap reveal">
   <div class="sec-head"><div class="num">04</div>
-    <div><h2>2025-26 projection</h2>
-    <p>The trained model simulates all 1,225 games, seeded with each team's form from the final 10 games of 2024-25.</p></div>
+    <div><h2>Train · Validation · Test</h2>
+    <p>Three views of the same fit: how it learned, how well it ranks games, and how its team-level predictions track reality on data it never trained on.</p></div>
   </div>
-  <div class="confgrid">
-    <div class="conf"><h3>Eastern Conference</h3>
-      <div class="sub">PROJECTED WIN % · ▾ playoff line</div>
-      <div id="east"></div>
-      <div class="playoff-note"><span class="cut"></span> top 8 make the playoffs</div>
+
+  <div class="twochart">
+    <div class="seasonbox">
+      <div class="ctitle"><span class="mono cap">LOSS PER EPOCH — binary cross-entropy</span></div>
+      <svg id="lossSvg" viewBox="0 0 460 300" style="width:100%;height:auto"></svg>
     </div>
-    <div class="conf"><h3>Western Conference</h3>
-      <div class="sub">PROJECTED WIN % · ▾ playoff line</div>
-      <div id="west"></div>
-      <div class="playoff-note"><span class="cut"></span> top 8 make the playoffs</div>
+    <div class="seasonbox">
+      <div class="ctitle"><span class="mono cap">ACCURACY PER EPOCH</span></div>
+      <svg id="accSvg" viewBox="0 0 460 300" style="width:100%;height:auto"></svg>
     </div>
   </div>
-  <div class="caveat"><b>Read this as a what-if, not a forecast.</b> The projection freezes the league
-  as it ended last season — it knows nothing about trades, the draft, or injuries, and it over-separates
-  good and bad teams because momentum compounds across a simulated schedule. It shows what the model
-  <i>learned</i> about team strength, not a betting sheet.</div>
+  <div class="legend center">
+    <span><i class="dot" style="background:#15191E"></i>Train</span>
+    <span><i class="dot" style="background:#E2622E"></i>Validation</span>
+    <span><i class="bar-key"></i>best epoch (early stop)</span>
+    <span><i class="dot" style="background:#b9bdb6"></i>63% ceiling</span>
+  </div>
+
+  <div class="seasonbox" style="margin-top:30px">
+    <div class="ctitle"><span class="mono cap">ROC CURVES — true-positive vs false-positive rate</span></div>
+    <div class="roc-wrap">
+      <svg id="rocSvg" viewBox="0 0 360 360" style="width:100%;max-width:360px;height:auto"></svg>
+      <div class="roc-legend" id="rocLegend"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:30px">
+    <div class="ctitle" style="margin-bottom:14px"><span class="mono cap">PREDICTED vs ACTUAL WIN % — each point is one team-season</span></div>
+    <div class="scatgrid">
+      <div class="seasonbox sc"><div class="sc-h">Train</div><svg id="scTrain" viewBox="0 0 240 240" style="width:100%;height:auto"></svg></div>
+      <div class="seasonbox sc"><div class="sc-h">Validation</div><svg id="scVal" viewBox="0 0 240 240" style="width:100%;height:auto"></svg></div>
+      <div class="seasonbox sc"><div class="sc-h test">Test</div><svg id="scTest" viewBox="0 0 240 240" style="width:100%;height:auto"></svg></div>
+    </div>
+    <p class="scat-note">Points hugging the diagonal mean predicted win% matches what teams actually did. The pattern holds on the held-out test seasons — the model generalizes rather than memorizes.</p>
+  </div>
 </div></section>
 
 <section class="block" id="files"><div class="wrap reveal">
@@ -369,38 +406,7 @@ footer .sig b{color:var(--amber)}
 </div></footer>
 
 <script>
-const DATA={"metrics":{"train":{"acc":0.6276397069386582,"auc":0.6625281198337858,"n":6961},"val":{"acc":0.6008130081300813,"auc":0.6198610800602353,"n":2460},"test":{"acc":0.6289205702647658,"auc":0.6760386570358481,"n":2455},"home_rate":0.5437881946563721,"params":13489,"epochs":18,"features":64,"games":11876},"seasons":[{"season":"2015-16","split":"Train","acc":0.65},{"season":"2016-17","split":"Train","acc":0.615},{"season":"2017-18","split":"Train","acc":0.632},{"season":"2018-19","split":"Train","acc":0.62},{"season":"2019-20","split":"Train","acc":0.635},{"season":"2020-21","split":"Train","acc":0.617},{"season":"2021-22","split":"Val","acc":0.62},{"season":"2022-23","split":"Val","acc":0.581},{"season":"2023-24","split":"Test","acc":0.625},{"season":"2024-25","split":"Test","acc":0.633}],"projection":[{"team":"OKC","w":79,"l":2,"pct":0.975,"conf":"West","rank":1},{"team":"BOS","w":73,"l":9,"pct":0.89,"conf":"East","rank":2},{"team":"IND","w":68,"l":12,"pct":0.85,"conf":"East","rank":3},{"team":"LAC","w":67,"l":15,"pct":0.817,"conf":"West","rank":4},{"team":"MIN","w":67,"l":15,"pct":0.817,"conf":"West","rank":5},{"team":"HOU","w":66,"l":15,"pct":0.815,"conf":"West","rank":6},{"team":"GSW","w":64,"l":18,"pct":0.78,"conf":"West","rank":7},{"team":"ATL","w":62,"l":19,"pct":0.765,"conf":"East","rank":8},{"team":"CLE","w":61,"l":21,"pct":0.744,"conf":"East","rank":9},{"team":"DEN","w":61,"l":21,"pct":0.744,"conf":"West","rank":10},{"team":"DET","w":61,"l":21,"pct":0.744,"conf":"East","rank":11},{"team":"CHI","w":57,"l":25,"pct":0.695,"conf":"East","rank":12},{"team":"MEM","w":46,"l":36,"pct":0.561,"conf":"West","rank":13},{"team":"MIL","w":43,"l":38,"pct":0.531,"conf":"East","rank":14},{"team":"NYK","w":42,"l":40,"pct":0.512,"conf":"East","rank":15},{"team":"PHX","w":35,"l":47,"pct":0.427,"conf":"West","rank":16},{"team":"SAS","w":34,"l":46,"pct":0.425,"conf":"West","rank":17},{"team":"ORL","w":32,"l":50,"pct":0.39,"conf":"East","rank":18},{"team":"TOR","w":31,"l":51,"pct":0.378,"conf":"East","rank":19},{"team":"LAL","w":30,"l":52,"pct":0.366,"conf":"West","rank":20},{"team":"POR","w":28,"l":54,"pct":0.341,"conf":"West","rank":21},{"team":"MIA","w":25,"l":56,"pct":0.309,"conf":"East","rank":22},{"team":"SAC","w":24,"l":58,"pct":0.293,"conf":"West","rank":23},{"team":"DAL","w":21,"l":61,"pct":0.256,"conf":"West","rank":24},{"team":"WAS","w":15,"l":66,"pct":0.185,"conf":"East","rank":25},{"team":"NOP","w":15,"l":67,"pct":0.183,"conf":"West","rank":26},{"team":"PHI","w":10,"l":72,"pct":0.122,"conf":"East","rank":27},{"team":"BKN","w":6,"l":76,"pct":0.073,"conf":"East","rank":28},{"team":"CHA","w":2,"l":80,"pct":0.024,"conf":"East","rank":29},{"team":"UTA","w":0,"l":82,"pct":0.0,"conf":"West","rank":30}]};
-
-// ---- hero ceiling animation ----
-(function(){
-  var plot=document.getElementById('plot');
-  var CEIL=0.63, MIN=0.50, MAX=0.66; // y-scale for bar heights
-  function h(acc){return ((acc-MIN)/(MAX-MIN))*100;}
-  var ceilPct=h(CEIL);
-  var line=document.getElementById('ceilLine');
-  line.style.bottom=ceilPct+'%';
-  document.getElementById('baseLine').style.bottom=h(0.544)+'%';
-  var yax=document.getElementById('yaxis');
-  [[CEIL,'63%','ceil'],[0.544,'54%','']].forEach(function(t){
-    var d=document.createElement('div');d.className='ytick '+t[2];
-    d.style.bottom=h(t[0])+'%';d.textContent=t[1];yax.appendChild(d);
-  });
-  var bars=plot.querySelectorAll('.bar');
-  var done=false;
-  function run(){
-    if(done)return; done=true;
-    line.classList.add('draw');
-    bars.forEach(function(b,i){
-      var acc=parseFloat(b.dataset.acc);
-      setTimeout(function(){
-        b.querySelector('.col').style.height=h(acc)+'%';
-        b.classList.add('show');
-      }, 250+i*160);
-    });
-  }
-  var io=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)run();});},{threshold:.3});
-  io.observe(plot);
-})();
+const DATA={"metrics":{"train":{"acc":0.628,"auc":0.663,"n":6961},"val":{"acc":0.601,"auc":0.62,"n":2460},"test":{"acc":0.629,"auc":0.676,"n":2455},"params":13489,"epochs":18,"best_ep":6,"features":64,"games":11876},"seasons":[{"season":"2015-16","split":"Train","acc":0.65},{"season":"2016-17","split":"Train","acc":0.615},{"season":"2017-18","split":"Train","acc":0.632},{"season":"2018-19","split":"Train","acc":0.62},{"season":"2019-20","split":"Train","acc":0.635},{"season":"2020-21","split":"Train","acc":0.617},{"season":"2021-22","split":"Val","acc":0.62},{"season":"2022-23","split":"Val","acc":0.581},{"season":"2023-24","split":"Test","acc":0.625},{"season":"2024-25","split":"Test","acc":0.633}],"history":[{"ep":1,"tl":0.6858,"vl":0.6716,"ta":0.5469,"va":0.5817},{"ep":2,"tl":0.6633,"vl":0.668,"ta":0.5949,"va":0.5967},{"ep":3,"tl":0.6582,"vl":0.6673,"ta":0.5975,"va":0.5988},{"ep":4,"tl":0.6501,"vl":0.667,"ta":0.6161,"va":0.6012},{"ep":5,"tl":0.6487,"vl":0.6663,"ta":0.6164,"va":0.6004},{"ep":6,"tl":0.6477,"vl":0.666,"ta":0.6167,"va":0.6008},{"ep":7,"tl":0.6442,"vl":0.6662,"ta":0.62,"va":0.5988},{"ep":8,"tl":0.6442,"vl":0.6662,"ta":0.6236,"va":0.5959},{"ep":9,"tl":0.6453,"vl":0.6668,"ta":0.6235,"va":0.5919},{"ep":10,"tl":0.6437,"vl":0.6663,"ta":0.6265,"va":0.5955},{"ep":11,"tl":0.643,"vl":0.6663,"ta":0.6207,"va":0.5967},{"ep":12,"tl":0.6405,"vl":0.6669,"ta":0.633,"va":0.5992},{"ep":13,"tl":0.6419,"vl":0.6663,"ta":0.6235,"va":0.5984},{"ep":14,"tl":0.6414,"vl":0.6663,"ta":0.6325,"va":0.5988},{"ep":15,"tl":0.6415,"vl":0.6668,"ta":0.6266,"va":0.6004},{"ep":16,"tl":0.64,"vl":0.6667,"ta":0.6302,"va":0.6004},{"ep":17,"tl":0.6386,"vl":0.6669,"ta":0.6314,"va":0.6016},{"ep":18,"tl":0.6371,"vl":0.6672,"ta":0.6276,"va":0.6028}],"roc":{"train":[[0.0,0.0],[0.015,0.061],[0.03,0.113],[0.046,0.141],[0.061,0.176],[0.077,0.206],[0.094,0.238],[0.111,0.27],[0.127,0.298],[0.146,0.327],[0.165,0.358],[0.182,0.386],[0.199,0.413],[0.219,0.449],[0.237,0.474],[0.256,0.495],[0.275,0.512],[0.3,0.532],[0.321,0.553],[0.343,0.571],[0.367,0.594],[0.388,0.609],[0.408,0.63],[0.428,0.648],[0.451,0.672],[0.47,0.693],[0.493,0.715],[0.515,0.733],[0.545,0.75],[0.564,0.765],[0.582,0.784],[0.607,0.799],[0.628,0.818],[0.652,0.837],[0.683,0.851],[0.704,0.866],[0.73,0.882],[0.755,0.899],[0.79,0.916],[0.821,0.93],[0.847,0.942],[0.88,0.96],[0.913,0.974],[0.951,0.987],[1.0,1.0]],"val":[[0.0,0.0],[0.014,0.024],[0.033,0.061],[0.048,0.098],[0.064,0.13],[0.08,0.156],[0.098,0.186],[0.115,0.216],[0.135,0.247],[0.153,0.286],[0.173,0.309],[0.192,0.334],[0.212,0.354],[0.232,0.377],[0.258,0.408],[0.277,0.435],[0.295,0.453],[0.322,0.478],[0.337,0.498],[0.363,0.526],[0.383,0.556],[0.411,0.578],[0.43,0.602],[0.456,0.622],[0.475,0.641],[0.492,0.66],[0.513,0.685],[0.538,0.705],[0.561,0.727],[0.578,0.744],[0.597,0.76],[0.617,0.779],[0.647,0.795],[0.669,0.815],[0.695,0.83],[0.719,0.853],[0.751,0.869],[0.779,0.886],[0.811,0.905],[0.832,0.92],[0.856,0.939],[0.877,0.952],[0.926,0.968],[0.96,0.985],[1.0,1.0]],"test":[[0.0,0.0],[0.011,0.056],[0.023,0.095],[0.039,0.124],[0.052,0.163],[0.062,0.199],[0.078,0.237],[0.092,0.273],[0.111,0.303],[0.129,0.328],[0.145,0.36],[0.161,0.383],[0.182,0.407],[0.204,0.436],[0.229,0.462],[0.249,0.491],[0.268,0.51],[0.281,0.537],[0.31,0.557],[0.33,0.579],[0.345,0.596],[0.362,0.613],[0.382,0.641],[0.397,0.66],[0.423,0.679],[0.444,0.698],[0.474,0.717],[0.5,0.732],[0.525,0.748],[0.548,0.763],[0.568,0.781],[0.596,0.799],[0.626,0.819],[0.648,0.837],[0.67,0.852],[0.695,0.865],[0.722,0.882],[0.753,0.892],[0.771,0.91],[0.799,0.927],[0.819,0.941],[0.857,0.958],[0.893,0.974],[0.93,0.987],[1.0,1.0]]},"scatter":{"train":[{"t":"ATL","s":"15-16","a":0.562,"p":0.671},{"t":"BKN","s":"15-16","a":0.276,"p":0.25},{"t":"BOS","s":"15-16","a":0.592,"p":0.579},{"t":"CHA","s":"15-16","a":0.605,"p":0.645},{"t":"CHI","s":"15-16","a":0.507,"p":0.507},{"t":"CLE","s":"15-16","a":0.68,"p":0.667},{"t":"DAL","s":"15-16","a":0.52,"p":0.453},{"t":"DEN","s":"15-16","a":0.408,"p":0.355},{"t":"DET","s":"15-16","a":0.52,"p":0.44},{"t":"GSW","s":"15-16","a":0.88,"p":0.96},{"t":"HOU","s":"15-16","a":0.493,"p":0.56},{"t":"IND","s":"15-16","a":0.56,"p":0.533},{"t":"LAC","s":"15-16","a":0.645,"p":0.697},{"t":"LAL","s":"15-16","a":0.211,"p":0.171},{"t":"MEM","s":"15-16","a":0.52,"p":0.52},{"t":"MIA","s":"15-16","a":0.592,"p":0.618},{"t":"MIL","s":"15-16","a":0.4,"p":0.427},{"t":"MIN","s":"15-16","a":0.329,"p":0.303},{"t":"NOP","s":"15-16","a":0.387,"p":0.36},{"t":"NYK","s":"15-16","a":0.387,"p":0.28},{"t":"OKC","s":"15-16","a":0.684,"p":0.789},{"t":"ORL","s":"15-16","a":0.427,"p":0.493},{"t":"PHI","s":"15-16","a":0.132,"p":0.118},{"t":"PHX","s":"15-16","a":0.263,"p":0.197},{"t":"POR","s":"15-16","a":0.533,"p":0.467},{"t":"SAC","s":"15-16","a":0.421,"p":0.447},{"t":"SAS","s":"15-16","a":0.829,"p":0.908},{"t":"TOR","s":"15-16","a":0.671,"p":0.724},{"t":"UTA","s":"15-16","a":0.474,"p":0.368},{"t":"WAS","s":"15-16","a":0.5,"p":0.5},{"t":"ATL","s":"16-17","a":0.524,"p":0.488},{"t":"BKN","s":"16-17","a":0.244,"p":0.159},{"t":"BOS","s":"16-17","a":0.646,"p":0.524},{"t":"CHA","s":"16-17","a":0.439,"p":0.463},{"t":"CHI","s":"16-17","a":0.5,"p":0.5},{"t":"CLE","s":"16-17","a":0.622,"p":0.634},{"t":"DAL","s":"16-17","a":0.402,"p":0.183},{"t":"DEN","s":"16-17","a":0.488,"p":0.512},{"t":"DET","s":"16-17","a":0.451,"p":0.512},{"t":"GSW","s":"16-17","a":0.817,"p":0.927},{"t":"HOU","s":"16-17","a":0.671,"p":0.744},{"t":"IND","s":"16-17","a":0.512,"p":0.549},{"t":"LAC","s":"16-17","a":0.622,"p":0.646},{"t":"LAL","s":"16-17","a":0.317,"p":0.293},{"t":"MEM","s":"16-17","a":0.524,"p":0.378},{"t":"MIA","s":"16-17","a":0.5,"p":0.5},{"t":"MIL","s":"16-17","a":0.512,"p":0.622},{"t":"MIN","s":"16-17","a":0.378,"p":0.39},{"t":"NOP","s":"16-17","a":0.415,"p":0.439},{"t":"NYK","s":"16-17","a":0.378,"p":0.476},{"t":"OKC","s":"16-17","a":0.573,"p":0.573},{"t":"ORL","s":"16-17","a":0.354,"p":0.317},{"t":"PHI","s":"16-17","a":0.341,"p":0.22},{"t":"PHX","s":"16-17","a":0.293,"p":0.28},{"t":"POR","s":"16-17","a":0.5,"p":0.585},{"t":"SAC","s":"16-17","a":0.39,"p":0.354},{"t":"SAS","s":"16-17","a":0.744,"p":0.841},{"t":"TOR","s":"16-17","a":0.622,"p":0.671},{"t":"UTA","s":"16-17","a":0.622,"p":0.537},{"t":"WAS","s":"16-17","a":0.598,"p":0.683},{"t":"ATL","s":"17-18","a":0.293,"p":0.28},{"t":"BKN","s":"17-18","a":0.341,"p":0.268},{"t":"BOS","s":"17-18","a":0.671,"p":0.598},{"t":"CHA","s":"17-18","a":0.439,"p":0.488},{"t":"CHI","s":"17-18","a":0.329,"p":0.268},{"t":"CLE","s":"17-18","a":0.61,"p":0.549},{"t":"DAL","s":"17-18","a":0.293,"p":0.256},{"t":"DEN","s":"17-18","a":0.561,"p":0.598},{"t":"DET","s":"17-18","a":0.476,"p":0.451},{"t":"GSW","s":"17-18","a":0.707,"p":0.927},{"t":"HOU","s":"17-18","a":0.793,"p":0.732},{"t":"IND","s":"17-18","a":0.585,"p":0.646},{"t":"LAC","s":"17-18","a":0.512,"p":0.476},{"t":"LAL","s":"17-18","a":0.427,"p":0.427},{"t":"MEM","s":"17-18","a":0.268,"p":0.183},{"t":"MIA","s":"17-18","a":0.537,"p":0.561},{"t":"MIL","s":"17-18","a":0.537,"p":0.524},{"t":"MIN","s":"17-18","a":0.573,"p":0.61},{"t":"NOP","s":"17-18","a":0.585,"p":0.707},{"t":"NYK","s":"17-18","a":0.354,"p":0.329},{"t":"OKC","s":"17-18","a":0.585,"p":0.634},{"t":"ORL","s":"17-18","a":0.305,"p":0.354},{"t":"PHI","s":"17-18","a":0.634,"p":0.634},{"t":"PHX","s":"17-18","a":0.256,"p":0.195},{"t":"POR","s":"17-18","a":0.598,"p":0.585},{"t":"SAC","s":"17-18","a":0.329,"p":0.293},{"t":"SAS","s":"17-18","a":0.573,"p":0.573},{"t":"TOR","s":"17-18","a":0.72,"p":0.78},{"t":"UTA","s":"17-18","a":0.585,"p":0.549},{"t":"WAS","s":"17-18","a":0.524,"p":0.524},{"t":"ATL","s":"18-19","a":0.354,"p":0.317},{"t":"BKN","s":"18-19","a":0.512,"p":0.451},{"t":"BOS","s":"18-19","a":0.598,"p":0.634},{"t":"CHA","s":"18-19","a":0.476,"p":0.476},{"t":"CHI","s":"18-19","a":0.268,"p":0.171},{"t":"CLE","s":"18-19","a":0.232,"p":0.085},{"t":"DAL","s":"18-19","a":0.402,"p":0.268},{"t":"DEN","s":"18-19","a":0.659,"p":0.646},{"t":"DET","s":"18-19","a":0.5,"p":0.366},{"t":"GSW","s":"18-19","a":0.695,"p":0.854},{"t":"HOU","s":"18-19","a":0.646,"p":0.5},{"t":"IND","s":"18-19","a":0.585,"p":0.659},{"t":"LAC","s":"18-19","a":0.585,"p":0.561},{"t":"LAL","s":"18-19","a":0.451,"p":0.427},{"t":"MEM","s":"18-19","a":0.402,"p":0.268},{"t":"MIA","s":"18-19","a":0.476,"p":0.561},{"t":"MIL","s":"18-19","a":0.732,"p":0.878},{"t":"MIN","s":"18-19","a":0.439,"p":0.524},{"t":"NOP","s":"18-19","a":0.402,"p":0.524},{"t":"NYK","s":"18-19","a":0.207,"p":0.146},{"t":"OKC","s":"18-19","a":0.598,"p":0.61},{"t":"ORL","s":"18-19","a":0.512,"p":0.439},{"t":"PHI","s":"18-19","a":0.622,"p":0.756},{"t":"PHX","s":"18-19","a":0.232,"p":0.171},{"t":"POR","s":"18-19","a":0.646,"p":0.646},{"t":"SAC","s":"18-19","a":0.476,"p":0.598},{"t":"SAS","s":"18-19","a":0.585,"p":0.646},{"t":"TOR","s":"18-19","a":0.707,"p":0.732},{"t":"UTA","s":"18-19","a":0.61,"p":0.646},{"t":"WAS","s":"18-19","a":0.39,"p":0.439},{"t":"ATL","s":"19-","a":0.299,"p":0.224},{"t":"BKN","s":"19-","a":0.486,"p":0.472},{"t":"BOS","s":"19-","a":0.667,"p":0.722},{"t":"CHA","s":"19-","a":0.354,"p":0.2},{"t":"CHI","s":"19-","a":0.338,"p":0.292},{"t":"CLE","s":"19-","a":0.292,"p":0.123},{"t":"DAL","s":"19-","a":0.573,"p":0.693},{"t":"DEN","s":"19-","a":0.63,"p":0.671},{"t":"DET","s":"19-","a":0.303,"p":0.364},{"t":"GSW","s":"19-","a":0.231,"p":0.262},{"t":"HOU","s":"19-","a":0.611,"p":0.667},{"t":"IND","s":"19-","a":0.616,"p":0.685},{"t":"LAC","s":"19-","a":0.681,"p":0.681},{"t":"LAL","s":"19-","a":0.732,"p":0.761},{"t":"MEM","s":"19-","a":0.466,"p":0.466},{"t":"MIA","s":"19-","a":0.603,"p":0.548},{"t":"MIL","s":"19-","a":0.767,"p":0.836},{"t":"MIN","s":"19-","a":0.297,"p":0.297},{"t":"NOP","s":"19-","a":0.417,"p":0.403},{"t":"NYK","s":"19-","a":0.318,"p":0.364},{"t":"OKC","s":"19-","a":0.611,"p":0.667},{"t":"ORL","s":"19-","a":0.452,"p":0.534},{"t":"PHI","s":"19-","a":0.589,"p":0.671},{"t":"PHX","s":"19-","a":0.466,"p":0.329},{"t":"POR","s":"19-","a":0.473,"p":0.568},{"t":"SAC","s":"19-","a":0.431,"p":0.292},{"t":"SAS","s":"19-","a":0.451,"p":0.479},{"t":"TOR","s":"19-","a":0.736,"p":0.736},{"t":"UTA","s":"19-","a":0.611,"p":0.472},{"t":"WAS","s":"19-","a":0.347,"p":0.333},{"t":"ATL","s":"-21","a":0.569,"p":0.542},{"t":"BKN","s":"-21","a":0.667,"p":0.792},{"t":"BOS","s":"-21","a":0.5,"p":0.542},{"t":"CHA","s":"-21","a":0.458,"p":0.458},{"t":"CHI","s":"-21","a":0.431,"p":0.417},{"t":"CLE","s":"-21","a":0.306,"p":0.222},{"t":"DAL","s":"-21","a":0.583,"p":0.556},{"t":"DEN","s":"-21","a":0.653,"p":0.75},{"t":"DET","s":"-21","a":0.278,"p":0.236},{"t":"GSW","s":"-21","a":0.542,"p":0.5},{"t":"HOU","s":"-21","a":0.236,"p":0.097},{"t":"IND","s":"-21","a":0.472,"p":0.583},{"t":"LAC","s":"-21","a":0.653,"p":0.722},{"t":"LAL","s":"-21","a":0.583,"p":0.486},{"t":"MEM","s":"-21","a":0.528,"p":0.556},{"t":"MIA","s":"-21","a":0.556,"p":0.361},{"t":"MIL","s":"-21","a":0.639,"p":0.764},{"t":"MIN","s":"-21","a":0.319,"p":0.333},{"t":"NOP","s":"-21","a":0.431,"p":0.528},{"t":"NYK","s":"-21","a":0.569,"p":0.556},{"t":"OKC","s":"-21","a":0.306,"p":0.125},{"t":"ORL","s":"-21","a":0.292,"p":0.208},{"t":"PHI","s":"-21","a":0.681,"p":0.722},{"t":"PHX","s":"-21","a":0.708,"p":0.792},{"t":"POR","s":"-21","a":0.583,"p":0.653},{"t":"SAC","s":"-21","a":0.431,"p":0.458},{"t":"SAS","s":"-21","a":0.458,"p":0.542},{"t":"TOR","s":"-21","a":0.375,"p":0.403},{"t":"UTA","s":"-21","a":0.722,"p":0.708},{"t":"WAS","s":"-21","a":0.472,"p":0.389}],"val":[{"t":"ATL","s":"21-22","a":0.524,"p":0.634},{"t":"BKN","s":"21-22","a":0.537,"p":0.622},{"t":"BOS","s":"21-22","a":0.622,"p":0.634},{"t":"CHA","s":"21-22","a":0.524,"p":0.585},{"t":"CHI","s":"21-22","a":0.561,"p":0.573},{"t":"CLE","s":"21-22","a":0.537,"p":0.5},{"t":"DAL","s":"21-22","a":0.634,"p":0.463},{"t":"DEN","s":"21-22","a":0.585,"p":0.573},{"t":"DET","s":"21-22","a":0.28,"p":0.098},{"t":"GSW","s":"21-22","a":0.646,"p":0.659},{"t":"HOU","s":"21-22","a":0.244,"p":0.183},{"t":"IND","s":"21-22","a":0.305,"p":0.354},{"t":"LAC","s":"21-22","a":0.512,"p":0.488},{"t":"LAL","s":"21-22","a":0.402,"p":0.5},{"t":"MEM","s":"21-22","a":0.683,"p":0.854},{"t":"MIA","s":"21-22","a":0.646,"p":0.598},{"t":"MIL","s":"21-22","a":0.622,"p":0.707},{"t":"MIN","s":"21-22","a":0.561,"p":0.61},{"t":"NOP","s":"21-22","a":0.439,"p":0.378},{"t":"NYK","s":"21-22","a":0.451,"p":0.402},{"t":"OKC","s":"21-22","a":0.293,"p":0.146},{"t":"ORL","s":"21-22","a":0.268,"p":0.098},{"t":"PHI","s":"21-22","a":0.622,"p":0.561},{"t":"PHX","s":"21-22","a":0.78,"p":0.854},{"t":"POR","s":"21-22","a":0.329,"p":0.402},{"t":"SAC","s":"21-22","a":0.366,"p":0.341},{"t":"SAS","s":"21-22","a":0.415,"p":0.488},{"t":"TOR","s":"21-22","a":0.585,"p":0.524},{"t":"UTA","s":"21-22","a":0.598,"p":0.683},{"t":"WAS","s":"21-22","a":0.427,"p":0.488},{"t":"ATL","s":"22-23","a":0.5,"p":0.598},{"t":"BKN","s":"22-23","a":0.549,"p":0.549},{"t":"BOS","s":"22-23","a":0.695,"p":0.744},{"t":"CHA","s":"22-23","a":0.329,"p":0.317},{"t":"CHI","s":"22-23","a":0.488,"p":0.476},{"t":"CLE","s":"22-23","a":0.622,"p":0.683},{"t":"DAL","s":"22-23","a":0.463,"p":0.402},{"t":"DEN","s":"22-23","a":0.646,"p":0.805},{"t":"DET","s":"22-23","a":0.207,"p":0.11},{"t":"GSW","s":"22-23","a":0.537,"p":0.537},{"t":"HOU","s":"22-23","a":0.268,"p":0.134},{"t":"IND","s":"22-23","a":0.427,"p":0.439},{"t":"LAC","s":"22-23","a":0.537,"p":0.549},{"t":"LAL","s":"22-23","a":0.524,"p":0.524},{"t":"MEM","s":"22-23","a":0.622,"p":0.744},{"t":"MIA","s":"22-23","a":0.537,"p":0.341},{"t":"MIL","s":"22-23","a":0.707,"p":0.72},{"t":"MIN","s":"22-23","a":0.512,"p":0.573},{"t":"NOP","s":"22-23","a":0.512,"p":0.451},{"t":"NYK","s":"22-23","a":0.573,"p":0.585},{"t":"OKC","s":"22-23","a":0.488,"p":0.463},{"t":"ORL","s":"22-23","a":0.415,"p":0.427},{"t":"PHI","s":"22-23","a":0.659,"p":0.659},{"t":"PHX","s":"22-23","a":0.549,"p":0.598},{"t":"POR","s":"22-23","a":0.402,"p":0.244},{"t":"SAC","s":"22-23","a":0.585,"p":0.622},{"t":"SAS","s":"22-23","a":0.268,"p":0.183},{"t":"TOR","s":"22-23","a":0.5,"p":0.561},{"t":"UTA","s":"22-23","a":0.451,"p":0.439},{"t":"WAS","s":"22-23","a":0.427,"p":0.524}],"test":[{"t":"ATL","s":"23-24","a":0.439,"p":0.537},{"t":"BKN","s":"23-24","a":0.39,"p":0.378},{"t":"BOS","s":"23-24","a":0.78,"p":0.89},{"t":"CHA","s":"23-24","a":0.256,"p":0.085},{"t":"CHI","s":"23-24","a":0.476,"p":0.512},{"t":"CLE","s":"23-24","a":0.585,"p":0.585},{"t":"DAL","s":"23-24","a":0.61,"p":0.537},{"t":"DEN","s":"23-24","a":0.695,"p":0.732},{"t":"DET","s":"23-24","a":0.171,"p":0.11},{"t":"GSW","s":"23-24","a":0.561,"p":0.585},{"t":"HOU","s":"23-24","a":0.5,"p":0.5},{"t":"IND","s":"23-24","a":0.573,"p":0.646},{"t":"LAC","s":"23-24","a":0.622,"p":0.695},{"t":"LAL","s":"23-24","a":0.573,"p":0.744},{"t":"MEM","s":"23-24","a":0.329,"p":0.22},{"t":"MIA","s":"23-24","a":0.561,"p":0.341},{"t":"MIL","s":"23-24","a":0.598,"p":0.707},{"t":"MIN","s":"23-24","a":0.683,"p":0.695},{"t":"NOP","s":"23-24","a":0.598,"p":0.622},{"t":"NYK","s":"23-24","a":0.61,"p":0.512},{"t":"OKC","s":"23-24","a":0.695,"p":0.829},{"t":"ORL","s":"23-24","a":0.573,"p":0.476},{"t":"PHI","s":"23-24","a":0.573,"p":0.622},{"t":"PHX","s":"23-24","a":0.598,"p":0.659},{"t":"POR","s":"23-24","a":0.256,"p":0.098},{"t":"SAC","s":"23-24","a":0.561,"p":0.512},{"t":"SAS","s":"23-24","a":0.268,"p":0.28},{"t":"TOR","s":"23-24","a":0.305,"p":0.354},{"t":"UTA","s":"23-24","a":0.378,"p":0.341},{"t":"WAS","s":"23-24","a":0.183,"p":0.195},{"t":"ATL","s":"24-25","a":0.494,"p":0.58},{"t":"BKN","s":"24-25","a":0.317,"p":0.159},{"t":"BOS","s":"24-25","a":0.744,"p":0.78},{"t":"CHA","s":"24-25","a":0.232,"p":0.134},{"t":"CHI","s":"24-25","a":0.476,"p":0.5},{"t":"CLE","s":"24-25","a":0.78,"p":0.817},{"t":"DAL","s":"24-25","a":0.476,"p":0.476},{"t":"DEN","s":"24-25","a":0.61,"p":0.756},{"t":"DET","s":"24-25","a":0.537,"p":0.573},{"t":"GSW","s":"24-25","a":0.585,"p":0.561},{"t":"HOU","s":"24-25","a":0.642,"p":0.667},{"t":"IND","s":"24-25","a":0.613,"p":0.713},{"t":"LAC","s":"24-25","a":0.61,"p":0.598},{"t":"LAL","s":"24-25","a":0.61,"p":0.549},{"t":"MEM","s":"24-25","a":0.585,"p":0.695},{"t":"MIA","s":"24-25","a":0.444,"p":0.444},{"t":"MIL","s":"24-25","a":0.58,"p":0.568},{"t":"MIN","s":"24-25","a":0.598,"p":0.549},{"t":"NOP","s":"24-25","a":0.256,"p":0.317},{"t":"NYK","s":"24-25","a":0.622,"p":0.61},{"t":"OKC","s":"24-25","a":0.827,"p":0.914},{"t":"ORL","s":"24-25","a":0.5,"p":0.378},{"t":"PHI","s":"24-25","a":0.293,"p":0.268},{"t":"PHX","s":"24-25","a":0.439,"p":0.488},{"t":"POR","s":"24-25","a":0.439,"p":0.195},{"t":"SAC","s":"24-25","a":0.488,"p":0.512},{"t":"SAS","s":"24-25","a":0.412,"p":0.588},{"t":"TOR","s":"24-25","a":0.366,"p":0.305},{"t":"UTA","s":"24-25","a":0.207,"p":0.122},{"t":"WAS","s":"24-25","a":0.222,"p":0.198}]}};
 
 // ---- per-season line chart ----
 (function(){
@@ -412,7 +418,6 @@ const DATA={"metrics":{"train":{"acc":0.6276397069386582,"auc":0.662528119833785
   var y=function(v){return padT+(1-(v-yMin)/(yMax-yMin))*(H-padT-padB);};
   var ns='http://www.w3.org/2000/svg';
   function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-  // gridlines
   [0.55,0.60,0.63,0.65].forEach(function(g){
     var ln=el('line',{x1:padL,x2:W-padR,y1:y(g),y2:y(g),
       stroke:g===0.63?'#cfd2cc':'#e9ebe6','stroke-width':g===0.63?1.4:1,
@@ -422,7 +427,6 @@ const DATA={"metrics":{"train":{"acc":0.6276397069386582,"auc":0.662528119833785
       'font-family':'IBM Plex Mono','font-size':11,fill:'#5B6672'});
     tx.textContent=(g*100).toFixed(0)+'%';svg.appendChild(tx);
   });
-  // x labels
   seasons.forEach(function(s,i){
     var tx=el('text',{x:x(i),y:H-padB+22,'text-anchor':'middle',
       'font-family':'IBM Plex Mono','font-size':10,fill:'#5B6672'});
@@ -447,28 +451,92 @@ const DATA={"metrics":{"train":{"acc":0.6276397069386582,"auc":0.662528119833785
   });
 })();
 
-// ---- projection bars ----
+// ---- shared SVG helpers ----
+var SVGNS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(SVGNS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function mono(o){o['font-family']='IBM Plex Mono';return o;}
+
+// ---- training curves (loss + accuracy) ----
 (function(){
-  function render(conf,id){
-    var rows=DATA.projection.filter(function(r){return r.conf===conf;});
-    var cut=rows.slice().sort(function(a,b){return b.pct-a.pct;})[7].pct; // 8th best
-    var box=document.getElementById(id);
-    rows.forEach(function(r){
-      var made=r.pct>=cut;
-      var div=document.createElement('div');div.className='trow';
-      div.innerHTML='<span class="rk">'+String(r.rank).padStart(2,'0')+'</span>'+
-        '<span class="tm">'+r.team+'</span>'+
-        '<span class="track"><span class="fill" data-w="'+(r.pct*100).toFixed(0)+'" '+
-        'style="background:'+(made?(conf==='East'?'#15191E':'#1F6F5C'):'#b9bdb6')+'"></span></span>'+
-        '<span class="rec">'+r.w+'–'+r.l+'</span>';
-      box.appendChild(div);
+  var H=DATA.history, bestEp=DATA.metrics.best_ep;
+  var eps=H.map(function(d){return d.ep;});
+  function curve(svgId, trKey, vaKey, yLo, yHi, ticks, ceiling){
+    var svg=document.getElementById(svgId);
+    var W=460,Ht=300,pl=52,pr=16,pt=20,pb=44;
+    var x=function(e){return pl+(e-eps[0])/(eps[eps.length-1]-eps[0])*(W-pl-pr);};
+    var y=function(v){return pt+(1-(v-yLo)/(yHi-yLo))*(Ht-pt-pb);};
+    ticks.forEach(function(g){
+      var hl=(ceiling!=null && Math.abs(g-ceiling)<1e-9);
+      svg.appendChild(svgEl('line',{x1:pl,x2:W-pr,y1:y(g),y2:y(g),
+        stroke:hl?'#cfd2cc':'#edefea','stroke-width':hl?1.4:1,'stroke-dasharray':hl?'5 4':'0'}));
+      var tx=svgEl('text',mono({x:pl-8,y:y(g)+4,'text-anchor':'end','font-size':11,fill:'#5B6672'}));
+      tx.textContent=(typeof ceiling!=='undefined'&&ceiling!=null)?(g*100).toFixed(0)+'%':g.toFixed(2);
+      svg.appendChild(tx);
+    });
+    // best-epoch marker
+    svg.appendChild(svgEl('line',{x1:x(bestEp),x2:x(bestEp),y1:pt,y2:Ht-pb,
+      stroke:'#1F6F5C','stroke-width':1.2,'stroke-dasharray':'3 3'}));
+    [eps[0],Math.round((eps[0]+eps[eps.length-1])/2),eps[eps.length-1]].forEach(function(e){
+      var tx=svgEl('text',mono({x:x(e),y:Ht-pb+20,'text-anchor':'middle','font-size':10,fill:'#5B6672'}));
+      tx.textContent='ep '+e;svg.appendChild(tx);
+    });
+    [[trKey,'#15191E'],[vaKey,'#E2622E']].forEach(function(pair){
+      var d='';H.forEach(function(p,i){d+=(i?'L':'M')+x(p.ep)+' '+y(p[pair[0]])+' ';});
+      svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:pair[1],'stroke-width':2.2,'stroke-linejoin':'round'}));
     });
   }
-  render('East','east');render('West','west');
-  var io=new IntersectionObserver(function(e){e.forEach(function(x){
-    if(x.isIntersecting){x.target.querySelectorAll('.fill').forEach(function(f){
-      f.style.width=f.dataset.w+'%';});io.unobserve(x.target);}});},{threshold:.2});
-  document.querySelectorAll('.conf').forEach(function(c){io.observe(c);});
+  curve('lossSvg','tl','vl',0.62,0.70,[0.62,0.64,0.66,0.68,0.70],null);
+  curve('accSvg','ta','va',0.54,0.66,[0.54,0.58,0.63,0.66],0.63);
+})();
+
+// ---- ROC curves ----
+(function(){
+  var svg=document.getElementById('rocSvg');
+  var S=320,pad=30,o=10;
+  function px(v){return o+pad+v*(S-pad-10);}
+  function py(v){return o+(1-v)*(S-pad-10);}
+  // axes + diagonal
+  svg.appendChild(svgEl('line',{x1:px(0),y1:py(0),x2:px(1),y2:py(0),stroke:'#cfd2cc','stroke-width':1}));
+  svg.appendChild(svgEl('line',{x1:px(0),y1:py(0),x2:px(0),y2:py(1),stroke:'#cfd2cc','stroke-width':1}));
+  svg.appendChild(svgEl('line',{x1:px(0),y1:py(0),x2:px(1),y2:py(1),stroke:'#b9bdb6','stroke-width':1,'stroke-dasharray':'4 4'}));
+  svg.appendChild(Object.assign(svgEl('text',mono({x:px(0.5),y:S+o+2,'text-anchor':'middle','font-size':10,fill:'#5B6672'})),{textContent:'false-positive rate'}));
+  var yl=svgEl('text',mono({x:o+4,y:py(0.5),'text-anchor':'middle','font-size':10,fill:'#5B6672',transform:'rotate(-90 '+(o+4)+' '+py(0.5)+')'}));yl.textContent='true-positive rate';svg.appendChild(yl);
+  var defs=[['train','#15191E','Train'],['val','#E2622E','Validation'],['test','#1F6F5C','Test']];
+  defs.forEach(function(c){
+    var pts=DATA.roc[c[0]];var d='';
+    pts.forEach(function(p,i){d+=(i?'L':'M')+px(p[0])+' '+py(p[1])+' ';});
+    svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:c[1],'stroke-width':2.2,'stroke-linejoin':'round'}));
+  });
+  var leg=document.getElementById('rocLegend');
+  defs.forEach(function(c){
+    var auc=DATA.metrics[c[0]].auc.toFixed(3);
+    var row=document.createElement('div');row.className='roc-row';
+    row.innerHTML='<span class="dot" style="background:'+c[1]+'"></span><span class="rl-n">'+c[2]+'</span><span class="rl-a">AUC '+auc+'</span>';
+    leg.appendChild(row);
+  });
+})();
+
+// ---- predicted vs actual scatter (train/val/test) ----
+(function(){
+  function panel(svgId, key, color){
+    var svg=document.getElementById(svgId);
+    var S=240,pad=30,lo=0.12,hi=0.88;
+    function sx(v){return pad+(v-lo)/(hi-lo)*(S-pad-12);}
+    function sy(v){return 12+(1-(v-lo)/(hi-lo))*(S-pad-12);}
+    // diagonal + frame
+    svg.appendChild(svgEl('rect',{x:pad,y:12,width:S-pad-12,height:S-pad-12,fill:'none',stroke:'#e4e6e1','stroke-width':1}));
+    svg.appendChild(svgEl('line',{x1:sx(lo),y1:sy(lo),x2:sx(hi),y2:sy(hi),stroke:'#b9bdb6','stroke-width':1,'stroke-dasharray':'4 4'}));
+    [0.3,0.5,0.7].forEach(function(g){
+      var tx=svgEl('text',mono({x:sx(g),y:S-8,'text-anchor':'middle','font-size':9,fill:'#8a9099'}));tx.textContent=(g*100).toFixed(0);svg.appendChild(tx);
+      var ty=svgEl('text',mono({x:pad-5,y:sy(g)+3,'text-anchor':'end','font-size':9,fill:'#8a9099'}));ty.textContent=(g*100).toFixed(0);svg.appendChild(ty);
+    });
+    DATA.scatter[key].forEach(function(p){
+      svg.appendChild(svgEl('circle',{cx:sx(p.a),cy:sy(p.p),r:3.2,fill:color,'fill-opacity':0.55,stroke:'#fff','stroke-width':0.6}));
+    });
+  }
+  panel('scTrain','train','#15191E');
+  panel('scVal','val','#E2622E');
+  panel('scTest','test','#1F6F5C');
 })();
 
 // ---- reveal on scroll ----
