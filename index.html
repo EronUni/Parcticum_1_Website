@@ -115,7 +115,7 @@ h1,h2,h3{font-family:"Saira Condensed",sans-serif;font-weight:800;letter-spacing
   letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
 
 /* ---- sections ---- */
-section.block{padding:72px 0;border-top:1px solid var(--line);position:relative}
+section.block{padding:72px 0;border-top:1px solid var(--line);position:relative;overflow:hidden}
 .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:34px}
 .sec-head .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ball);font-weight:600;padding-top:8px}
 .sec-head h2{font-size:clamp(32px,5.4vw,52px);text-transform:uppercase;letter-spacing:.01em}
@@ -203,6 +203,27 @@ footer .sig .bo{color:var(--ball)}
   *{transition:none!important;animation:none!important}
   .reveal{opacity:1;transform:none}.ceil-line,.veg-line{transform:scaleX(1)}
 }
+
+/* ---- accordion ---- */
+.accordion{display:flex;flex-direction:column;gap:14px;position:relative;z-index:2}
+.acc-item{border:1px solid var(--line);border-radius:8px;background:var(--bg2);overflow:hidden;position:relative}
+.acc-item::before{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--ball)}
+.acc-item.open{border-color:rgba(242,106,43,.4)}
+.acc-head{width:100%;display:flex;align-items:center;gap:18px;padding:22px 28px;background:none;border:none;cursor:pointer;text-align:left;color:var(--ink);transition:background .2s}
+.acc-head:hover{background:rgba(242,106,43,.06)}
+.acc-kick{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.1em;color:var(--ball);font-weight:600;flex:none;width:118px}
+.acc-title{font-family:"Saira Condensed";font-weight:800;font-size:clamp(22px,3.2vw,32px);text-transform:uppercase;letter-spacing:.01em;flex:1;line-height:1.04}
+.acc-plus{font-family:"Saira Condensed";font-weight:700;font-size:32px;color:var(--ball);transition:transform .3s ease;flex:none;line-height:1}
+.acc-item.open .acc-plus{transform:rotate(45deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .38s ease}
+.acc-body p{padding:4px 28px 26px 28px;font-size:18.5px;line-height:1.62;color:#D6DEE9;max-width:840px}
+.acc-body p b{color:#fff}
+@media(max-width:640px){.acc-head{flex-wrap:wrap;gap:6px}.acc-kick{width:auto}.acc-body p{font-size:17px;padding:4px 22px 22px}}
+
+/* ---- faded nba backgrounds ---- */
+.deco{position:absolute;z-index:0;pointer-events:none}
+.deco.ball{opacity:.06}
+.deco.key{opacity:.05}
 </style>
 </head>
 <body>
@@ -238,7 +259,7 @@ footer .sig .bo{color:var(--ball)}
   </div>
   <div class="wrap">
     <div class="eyebrow">NBA Game Prediction · Wide &amp; Deep Neural Net</div>
-    <h1 class="ask">Is 63%<br><em>any good?</em></h1>
+    <h1 class="ask">Can a model<br><em>hang with Vegas?</em></h1>
     <p class="lede">A deep-learning model calls NBA games at <b>63% accuracy</b> from nothing
     but pre-tip-off box-score averages. Whether that's impressive or underwhelming depends
     entirely on what you stack it against. So let's stack it.</p>
@@ -284,7 +305,7 @@ footer .sig .bo{color:var(--ball)}
   </div>
 </header>
 
-<section class="block" id="why"><div class="wrap reveal">
+<section class="block" id="why"><svg class="deco ball" style="width:min(460px,54vw);right:-130px;top:50px" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="#F26A2B" stroke-width="3"><circle cx="100" cy="100" r="97"/><path d="M100 3 V197 M3 100 H197 M30 28 C 80 68 80 132 30 172 M170 28 C 120 68 120 132 170 172"/></g></svg><div class="wrap reveal">
   <div class="sec-head"><div class="num">01</div>
     <div><h2>So, is it good?</h2>
     <p>Three reasons 63% is exactly where an honest NBA model should land.</p></div>
@@ -292,20 +313,35 @@ footer .sig .bo{color:var(--ball)}
   <div class="bigstat">Las Vegas — with insider injury news, sharp money, and decades of modeling —
   tops out around <span class="o">66–68%</span>. This model reaches <span class="c">63%</span>
   on data it has never seen. The gap is small, and it closes honestly.</div>
-  <div class="cards">
-    <div class="card"><div class="ic">THE WALL</div>
-      <h3>63% is the real ceiling</h3>
-      <p>With leakage-free rolling features, single-game prediction tops out near 63%. Pushing the model harder — bigger, deeper, less regularized — <b>did not move it</b>. That's the signal ceiling of the data, not a tuning failure.</p></div>
-    <div class="card"><div class="ic">THE LEAK TEST</div>
-      <h3>A high score would be a red flag</h3>
-      <p>If this returned 90%, the right response is suspicion, not celebration — a feature secretly encoding the result. Earlier versions leaked through head-to-head and season win-percentage stats. Cleaning them out brought it back to an honest 63%.</p></div>
-    <div class="card"><div class="ic">THE FIT</div>
-      <h3>Train ≈ Test</h3>
-      <p>Training accuracy (62.8%) and held-out test accuracy (62.9%) sit within a tenth of a point. The model isn't memorizing the past; it generalizes to seasons it never saw. Heavy dropout and weight decay keep it there.</p></div>
+  <div class="accordion">
+    <div class="acc-item">
+      <button class="acc-head" aria-expanded="false">
+        <span class="acc-kick">THE WALL</span>
+        <span class="acc-title">63% is the real ceiling</span>
+        <span class="acc-plus">+</span>
+      </button>
+      <div class="acc-body"><p>With leakage-free rolling features, single-game prediction tops out near 63%. Pushing the model harder &mdash; bigger, deeper, less regularized &mdash; <b>did not move it</b>. That's the signal ceiling of the data, not a tuning failure.</p></div>
+    </div>
+    <div class="acc-item">
+      <button class="acc-head" aria-expanded="false">
+        <span class="acc-kick">THE LEAK TEST</span>
+        <span class="acc-title">A high score would be a red flag</span>
+        <span class="acc-plus">+</span>
+      </button>
+      <div class="acc-body"><p>If this returned 90%, the right response is suspicion, not celebration &mdash; a feature secretly encoding the result. Earlier versions leaked through head-to-head and season win-percentage stats. Cleaning them out brought it back to an <b>honest 63%</b>.</p></div>
+    </div>
+    <div class="acc-item">
+      <button class="acc-head" aria-expanded="false">
+        <span class="acc-kick">THE FIT</span>
+        <span class="acc-title">Train &asymp; Test</span>
+        <span class="acc-plus">+</span>
+      </button>
+      <div class="acc-body"><p>Training accuracy (62.8%) and held-out test accuracy (62.9%) sit within a tenth of a point. The model isn't memorizing the past; <b>it generalizes</b> to seasons it never saw. Heavy dropout and weight decay keep it there.</p></div>
+    </div>
   </div>
 </div></section>
 
-<section class="block" id="model"><div class="wrap reveal">
+<section class="block" id="model"><svg class="deco key" style="width:min(380px,46vw);left:-120px;bottom:-90px" viewBox="0 0 400 460" aria-hidden="true"><g fill="none" stroke="#ECE3CF" stroke-width="3"><rect x="150" y="0" width="100" height="190"/><circle cx="200" cy="190" r="60"/><path d="M40 0 L40 70 A 170 170 0 0 0 360 70 L360 0"/><circle cx="200" cy="40" r="7"/></g></svg><div class="wrap reveal">
   <div class="sec-head"><div class="num">02</div>
     <div><h2>The Wide &amp; Deep model</h2>
     <p>Two paths in parallel: a linear branch that memorizes direct signals, and a deep branch that learns interactions. Fused into one call.</p></div>
@@ -340,7 +376,7 @@ footer .sig .bo{color:var(--ball)}
   </div>
 </div></section>
 
-<section class="block" id="results"><div class="wrap reveal">
+<section class="block" id="results"><svg class="deco ball" style="width:min(420px,50vw);left:-140px;bottom:-110px" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="#F26A2B" stroke-width="3"><circle cx="100" cy="100" r="97"/><path d="M100 3 V197 M3 100 H197 M30 28 C 80 68 80 132 30 172 M170 28 C 120 68 120 132 170 172"/></g></svg><div class="wrap reveal">
   <div class="sec-head"><div class="num">03</div>
     <div><h2>Results</h2>
     <p>Every split lands at or under the ceiling, and accuracy holds steady year over year.</p></div>
@@ -355,7 +391,7 @@ footer .sig .bo{color:var(--ball)}
   </table>
   <div class="panel">
     <div class="ctitle"><span class="mono cap">PER-SEASON ACCURACY · 2015-16 → 2024-25</span></div>
-    <svg id="seasonSvg" viewBox="0 0 920 260" style="width:100%;height:auto"></svg>
+    <svg id="seasonSvg" viewBox="0 0 920 440" style="width:100%;height:auto"></svg>
     <div class="legend">
       <span><i class="dot" style="background:var(--train)"></i>Train</span>
       <span><i class="dot" style="background:var(--val)"></i>Validation</span>
@@ -365,24 +401,13 @@ footer .sig .bo{color:var(--ball)}
   </div>
 </div></section>
 
-<section class="block" id="proj"><div class="wrap reveal">
+<section class="block" id="proj"><svg class="deco key" style="width:min(430px,52vw);right:-140px;top:30px" viewBox="0 0 400 460" aria-hidden="true"><g fill="none" stroke="#ECE3CF" stroke-width="3"><rect x="150" y="0" width="100" height="190"/><circle cx="200" cy="190" r="60"/><path d="M40 0 L40 70 A 170 170 0 0 0 360 70 L360 0"/><circle cx="200" cy="40" r="7"/></g></svg><div class="wrap reveal">
   <div class="sec-head"><div class="num">04</div>
     <div><h2>Train · Validation · Test</h2>
     <p>How well it ranks games, and how its team-level calls track reality on seasons it never trained on.</p></div>
   </div>
 
   <div class="panel">
-    <div class="ctitle"><span class="mono cap">ACCURACY PER EPOCH — train vs validation</span></div>
-    <svg id="accSvg" viewBox="0 0 920 300" style="width:100%;height:auto"></svg>
-    <div class="legend center">
-      <span><i class="dot" style="background:var(--train)"></i>Train</span>
-      <span><i class="dot" style="background:var(--val)"></i>Validation</span>
-      <span><i class="bar-key"></i>best epoch (early stop)</span>
-      <span><i class="dot" style="background:#7E8AA0"></i>63% ceiling</span>
-    </div>
-  </div>
-
-  <div class="panel" style="margin-top:30px">
     <div class="ctitle"><span class="mono cap">ROC CURVES — true-positive vs false-positive rate</span></div>
     <div class="roc-wrap">
       <svg id="rocSvg" viewBox="0 0 360 360" style="width:100%;max-width:360px;height:auto"></svg>
@@ -463,55 +488,30 @@ var C={train:'#D8CDB2',val:'#F26A2B',test:'#37C2A4'};
   new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)run();});},{threshold:.3}).observe(plot);
 })();
 
-// ---- per-season line ----
+// ---- per-season horizontal bars ----
 (function(){
   var svg=document.getElementById('seasonSvg');
-  var W=920,H=260,pl=46,pr=14,pt=18,pb=46;
-  var seasons=[...new Set(DATA.seasons.map(function(s){return s.season;}))];
-  var x=function(i){return pl+i*((W-pl-pr)/(seasons.length-1));};
-  var yMin=0.50,yMax=0.68;
-  var y=function(v){return pt+(1-(v-yMin)/(yMax-yMin))*(H-pt-pb);};
-  function el(t,a){return svgEl(t,a);}
-  [0.55,0.60,0.63,0.65].forEach(function(g){
+  var W=920,H=440,padL=92,padR=74,padT=16,padB=38;
+  var rows=DATA.seasons;
+  var xLo=0.50,xHi=0.68;
+  var bx=function(v){return padL+(v-xLo)/(xHi-xLo)*(W-padL-padR);};
+  var n=rows.length, areaH=H-padT-padB, rowH=areaH/n, barH=Math.min(22,rowH*0.56);
+  [0.54,0.58,0.63,0.66].forEach(function(g){
     var hl=g===0.63;
-    svg.appendChild(el('line',{x1:pl,x2:W-pr,y1:y(g),y2:y(g),stroke:hl?'#7E8AA0':'rgba(236,227,207,.12)','stroke-width':hl?1.4:1,'stroke-dasharray':hl?'5 4':'0'}));
-    var tx=el('text',mono({x:pl-8,y:y(g)+4,'text-anchor':'end','font-size':11,fill:'#93A1B6'}));tx.textContent=(g*100).toFixed(0)+'%';svg.appendChild(tx);
+    svg.appendChild(svgEl('line',{x1:bx(g),x2:bx(g),y1:padT,y2:H-padB,stroke:hl?'#7E8AA0':'rgba(236,227,207,.10)','stroke-width':hl?1.4:1,'stroke-dasharray':hl?'5 4':'0'}));
+    var tx=svgEl('text',mono({x:bx(g),y:H-padB+22,'text-anchor':'middle','font-size':11,fill:'#93A1B6'}));tx.textContent=(g*100).toFixed(0)+'%';svg.appendChild(tx);
   });
-  seasons.forEach(function(s,i){
-    var tx=el('text',mono({x:x(i),y:H-pb+22,'text-anchor':'middle','font-size':10,fill:'#93A1B6'}));tx.textContent=s.replace('20','').replace('-','\u2013');svg.appendChild(tx);
-  });
-  ['Train','Val','Test'].forEach(function(split){
-    var key=split.toLowerCase();var col=C[key];
-    var pts=DATA.seasons.filter(function(s){return s.split===split;});
-    var d='';pts.forEach(function(p){var i=seasons.indexOf(p.season);d+=(d?'L':'M')+x(i)+' '+y(p.acc)+' ';});
-    svg.appendChild(el('path',{d:d,fill:'none',stroke:col,'stroke-width':2.6,'stroke-linejoin':'round','stroke-linecap':'round'}));
-    pts.forEach(function(p){var i=seasons.indexOf(p.season);svg.appendChild(el('circle',{cx:x(i),cy:y(p.acc),r:4,fill:'#122439',stroke:col,'stroke-width':2}));});
+  var z=svgEl('text',mono({x:padL,y:H-padB+22,'text-anchor':'middle','font-size':11,fill:'#93A1B6'}));z.textContent='50%';svg.appendChild(z);
+  var cl=svgEl('text',mono({x:bx(0.63),y:padT-3,'text-anchor':'middle','font-size':10,fill:'#7E8AA0'}));cl.textContent='63% ceiling';svg.appendChild(cl);
+  rows.forEach(function(p,i){
+    var cy=padT+i*rowH+rowH/2;
+    var col=C[p.split.toLowerCase()];
+    var lab=svgEl('text',mono({x:padL-12,y:cy+4,'text-anchor':'end','font-size':12,fill:'#C7D0DD'}));lab.textContent=p.season;svg.appendChild(lab);
+    svg.appendChild(svgEl('rect',{x:bx(xLo),y:cy-barH/2,width:Math.max(2,bx(p.acc)-bx(xLo)),height:barH,rx:3,fill:col,'fill-opacity':0.92}));
+    var val=svgEl('text',mono({x:bx(p.acc)+8,y:cy+4,'font-size':12,fill:'#F4F1EA','font-weight':600}));val.textContent=(p.acc*100).toFixed(1)+'%';svg.appendChild(val);
   });
 })();
 
-// ---- accuracy per epoch ----
-(function(){
-  var H=DATA.history,bestEp=DATA.metrics.best_ep;
-  var eps=H.map(function(d){return d.ep;});
-  var svg=document.getElementById('accSvg');
-  var W=920,Ht=300,pl=54,pr=18,pt=20,pb=46,yLo=0.54,yHi=0.66;
-  var x=function(e){return pl+(e-eps[0])/(eps[eps.length-1]-eps[0])*(W-pl-pr);};
-  var y=function(v){return pt+(1-(v-yLo)/(yHi-yLo))*(Ht-pt-pb);};
-  [0.54,0.58,0.63,0.66].forEach(function(g){
-    var hl=g===0.63;
-    svg.appendChild(svgEl('line',{x1:pl,x2:W-pr,y1:y(g),y2:y(g),stroke:hl?'#7E8AA0':'rgba(236,227,207,.12)','stroke-width':hl?1.4:1,'stroke-dasharray':hl?'5 4':'0'}));
-    var tx=svgEl('text',mono({x:pl-8,y:y(g)+4,'text-anchor':'end','font-size':11,fill:'#93A1B6'}));tx.textContent=(g*100).toFixed(0)+'%';svg.appendChild(tx);
-  });
-  svg.appendChild(svgEl('line',{x1:x(bestEp),x2:x(bestEp),y1:pt,y2:Ht-pb,stroke:'#37C2A4','stroke-width':1.3,'stroke-dasharray':'3 3'}));
-  var lt=svgEl('text',mono({x:x(bestEp)+6,y:pt+12,'font-size':10,fill:'#37C2A4'}));lt.textContent='best epoch';svg.appendChild(lt);
-  [eps[0],Math.round((eps[0]+eps[eps.length-1])/2),eps[eps.length-1]].forEach(function(e){
-    var tx=svgEl('text',mono({x:x(e),y:Ht-pb+22,'text-anchor':'middle','font-size':10,fill:'#93A1B6'}));tx.textContent='epoch '+e;svg.appendChild(tx);
-  });
-  [['ta',C.train],['va',C.val]].forEach(function(pair){
-    var d='';H.forEach(function(p,i){d+=(i?'L':'M')+x(p.ep)+' '+y(p[pair[0]])+' ';});
-    svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:pair[1],'stroke-width':2.6,'stroke-linejoin':'round'}));
-  });
-})();
 
 // ---- ROC ----
 (function(){
@@ -551,6 +551,21 @@ var C={train:'#D8CDB2',val:'#F26A2B',test:'#37C2A4'};
     });
   }
   panel('scTrain','train',C.train);panel('scVal','val',C.val);panel('scTest','test',C.test);
+})();
+
+// ---- accordion ----
+(function(){
+  document.querySelectorAll('.acc-head').forEach(function(h){
+    h.addEventListener('click',function(){
+      var item=h.parentElement, body=item.querySelector('.acc-body');
+      var open=item.classList.toggle('open');
+      h.setAttribute('aria-expanded',open?'true':'false');
+      body.style.maxHeight=open?(body.scrollHeight+'px'):'0';
+    });
+  });
+  window.addEventListener('resize',function(){
+    document.querySelectorAll('.acc-item.open .acc-body').forEach(function(b){b.style.maxHeight=b.scrollHeight+'px';});
+  });
 })();
 
 // ---- reveal ----
